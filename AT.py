@@ -21,5 +21,12 @@ class User(db.Model):
 def home():
     return "Automax Transport - Database Connected!"
 
+@app.route('/runmigrations')
+def run_migrations():
+    with app.app_context():
+        from flask_migrate import upgrade
+        upgrade()
+    return "Migrations Applied Successfully!"
+
 if __name__ == '__main__':
     app.run(debug=True)
