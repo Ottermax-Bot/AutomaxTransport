@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate, upgrade
+from flask_migrate import Migrate, upgrade, init
 import os
 
 app = Flask(__name__)
@@ -30,6 +30,10 @@ def home():
 @app.route('/runmigrations')
 def run_migrations():
     with app.app_context():
+        try:
+            init()  # Initialize migrations if not exists
+        except Exception as e:
+            print("Migrations folder already exists or another issue occurred:", e)
         upgrade()
     return "Migrations Applied Successfully!"
 
