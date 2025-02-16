@@ -45,14 +45,24 @@ class User(db.Model, UserMixin):
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255), nullable=False)
-    pickup_location = db.Column(db.String(255), nullable=False)
-    dropoff_location = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.String(50), default="Open")  # Open, In Progress, Completed
+    branch = db.Column(db.String(50), nullable=False)  # Branch creating the job
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     assigned_driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    branch = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default="Pending")  # Pending, In Progress, Paused, Completed
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    driver = db.relationship("User", backref="jobs")
+    # Multi-stop locations
+    stops = db.relationship("JobStop", backref="job", lazy=True)
+
+class JobStop(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    sequence = db.Column(db.Integer, nullable=False)  # Step 1, Step 2, etc.
+    location = db.Column(db.String(255), nullable=False)
+    estimated_drive_time = db.Column(db.Integer, nullable=True)  # Minutes
+    completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
