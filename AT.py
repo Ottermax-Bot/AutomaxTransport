@@ -40,6 +40,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="driver")  # driver, manager, admin
+    branch = db.Column(db.String(50), nullable=True)  # For managers
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -115,7 +116,12 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template("dashboard.html", user=current_user)
+    if current_user.role == "admin":
+        return render_template("admin_dashboard.html", user=current_user)
+    elif current_user.role == "manager":
+        return render_template("manager_dashboard.html", user=current_user, jobs_visible_to_all=True)
+    else:
+        return render_template("driver_dashboard.html", user=current_user)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
