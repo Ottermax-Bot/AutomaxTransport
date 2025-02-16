@@ -1,24 +1,26 @@
+# Step 2.1: User Authentication & Role Management
+
 from flask import Flask, render_template, redirect, url_for, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 import os, datetime
+
+# Load environment variables from .env file (if present)
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")  # Change this in production!
 
-# Securely load database credentials from environment variables
-db_url = os.getenv('DATABASE_URL', 'postgresql://localhost/defaultdb')
+# SQLAlchemy Configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL", "postgresql://automaxsql_user:BxYaSA6x1cpBCymyo0t3cUuzDcF8gAKg@dpg-cunpfc8gph6c73f0u7n0-a/automaxsql"
+)  # Read from environment variable or fallback to hardcoded URI
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Ensure database URL is formatted correctly for SQLAlchemy
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(minutes=15)  # Auto logout after 15 min inactivity
-
+# Initialize SQLAlchemy and Flask-Migrate
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
