@@ -115,6 +115,59 @@ def create_admin():
             db.session.commit()
         return "Admin user created successfully!"
 
+
+@app.route('/createmanager')
+def create_manager():
+    """Creates a test manager account with basic credentials."""
+    with app.app_context():
+        manager_user = User.query.filter_by(username='Manager').first()
+        if not manager_user:
+            manager_user = User(username='Manager', role='manager', branch="Rome")
+            manager_user.set_password('Password')
+            db.session.add(manager_user)
+            db.session.commit()
+        return "Manager user created successfully! Login with Manager:Password"
+
+@app.route('/createdriver')
+def create_driver():
+    """Creates a test driver account with basic credentials."""
+    with app.app_context():
+        driver_user = User.query.filter_by(username='Driver').first()
+        if not driver_user:
+            driver_user = User(username='Driver', role='driver')
+            driver_user.set_password('Password')
+            db.session.add(driver_user)
+            db.session.commit()
+        return "Driver user created successfully! Login with Driver:Password"
+
+
+@app.route('/viewas/<role>')
+@login_required
+def view_as(role):
+    """Allows admin to view the dashboard as a driver or manager."""
+    if current_user.role != "admin":
+        return redirect(url_for('dashboard'))  # Only admins can use this feature
+
+    session['original_role'] = current_user.role  # Store original role in session
+
+    if role == "driver":
+        return redirect(url_for('dashboard', fake_role="driver"))
+    elif role == "manager":
+        return redirect(url_for('dashboard', fake_role="manager"))
+    else:
+        return redirect(url_for('dashboard'))
+
+
+@app.route('/returntoadmin')
+@login_required
+def return_to_admin():
+    """Allows admin to switch back to their actual role."""
+    if 'original_role' in session:
+        session.pop('original_role', None)
+    return redirect(url_for('dashboard'))
+
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
