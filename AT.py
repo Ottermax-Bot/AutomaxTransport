@@ -56,7 +56,7 @@ def session_timeout_check():
 
 @app.route('/')
 def home():
-    return "Automax Transport - Web App Running!"
+    return render_template("index.html")
 
 @app.route('/create_admin')
 def create_admin():
