@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<h2>Welcome, Manager {{ user.username }}!</h2>
+
+<div class="dashboard-container">
+    <h3>Branch: {{ user.branch }}</h3>
+
+    <h3>Manage Jobs</h3>
+    <ul>
+        <li><a href="#">Post New Job</a></li>
+        <li><a href="#">View Pending Jobs</a></li>
+        <li><a href="#">Assign Drivers</a></li>
+    </ul>
+
+    <h3>View Drivers</h3>
+    <ul>
+        <li><a href="#">Driver Schedules</a></li>
+        <li><a href="#">Approve Time-Off</a></li>
+    </ul>
+</div>
+
+{% endblock %}
