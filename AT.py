@@ -198,6 +198,17 @@ def post_job():
 
     return render_template("post_job.html")
 
+@app.route('/accept_job/<int:job_id>', methods=['POST'])
+@login_required
+def accept_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    if job.assigned_driver_id is None and current_user.role == "driver":
+        job.assigned_driver_id = current_user.id
+        job.status = "In Progress"
+        db.session.commit()
+    return redirect(url_for('dashboard'))
+
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
