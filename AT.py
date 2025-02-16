@@ -42,6 +42,18 @@ class User(db.Model, UserMixin):
     role = db.Column(db.String(20), nullable=False, default="driver")  # driver, manager, admin
     branch = db.Column(db.String(50), nullable=True)  # For managers
 
+class Job(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(255), nullable=False)
+    pickup_location = db.Column(db.String(255), nullable=False)
+    dropoff_location = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(50), default="Open")  # Open, In Progress, Completed
+    assigned_driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    branch = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    driver = db.relationship("User", backref="jobs")
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -125,6 +137,65 @@ def dashboard():
         available_jobs = Job.query.filter_by(assigned_driver_id=None).all()
         accepted_jobs = Job.query.filter_by(assigned_driver_id=current_user.id).all()
         return render_template("driver_dashboard.html", user=current_user, available_jobs=available_jobs, accepted_jobs=accepted_jobs)
+
+
+
+@app.route('/post_job', methods=['GET', 'POST'])
+@login_required
+def post_job():
+    if current_user.role not in ["admin", "manager"]:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        description = request.form['description']
+        pickup_location = request.form['pickup_location']
+        dropoff_location = request.form['dropoff_location']
+        branch = current_user.branch if current_user.role == "manager" else request.form['branch']
+
+        new_job = Job(description=description, pickup_location=pickup_location, dropoff_location=dropoff_location, branch=branch)
+        db.session.add(new_job)
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+
+    return render_template("post_job.html")
+
+@app.route('/edit_job/<int:job_id>', methods=['GET', 'POST'])
+@login_required
+def edit_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    if current_user.role != "admin" and current_user.branch != job.branch:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        job.description = request.form['description']
+        job.pickup_location = request.form['pickup_location']
+        job.dropoff_location = request.form['dropoff_location']
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+
+    return render_template("edit_job.html", job=job)
+
+@app.route('/delete_job/<int:job_id>', methods=['POST'])
+@login_required
+def delete_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    if current_user.role != "admin" and current_user.branch != job.branch:
+        return redirect(url_for('dashboard'))
+
+    db.session.delete(job)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
+
+@app.route('/accept_job/<int:job_id>', methods=['POST'])
+@login_required
+def accept_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    if job.assigned_driver_id is None and current_user.role == "driver":
+        job.assigned_driver_id = current_user.id
+        job.status = "In Progress"
+        db.session.commit()
+    return redirect(url_for('dashboard'))
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
