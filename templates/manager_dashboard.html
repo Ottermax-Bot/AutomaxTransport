@@ -4,44 +4,50 @@
 
 {% block content %}
 <h2>Welcome, Manager {{ user.username }}!</h2>
-<h3>🏢 Branch: {{ user.branch }}</h3>
 
 <div class="dashboard-container">
+    <h3>🏢 Branch: {{ user.branch }}</h3>
+
+    <!-- Job Management Section -->
     <section>
         <h3>📌 Manage Jobs for {{ user.branch }}</h3>
         <ul class="job-list">
             {% for job in jobs %}
-                {% if job.branch == user.branch %}
-                    <li>
-                        🚙 {{ job.description }}  
-                        <button onclick="editJob('{{ job.id }}')">✏ Edit</button>
-                        <button onclick="cancelJob('{{ job.id }}')">❌ Cancel</button>
-                    </li>
-                {% else %}
-                    <li>🚙 (Other Branch) {{ job.description }}</li>
-                {% endif %}
+            <li>
+                🚙 {{ job.description }}
+                <button onclick="editJob({{ job.id }})">✏ Edit</button>
+                <button onclick="cancelJob({{ job.id }})" class="cancel-btn">❌ Cancel</button>
+            </li>
+            {% else %}
+            <li>No jobs available.</li>
             {% endfor %}
         </ul>
     </section>
 
+    <!-- Post New Job Section -->
     <section>
-        <h3>➕ Post a New Job</h3>
-        <form action="#" method="POST">
-            <input type="text" name="description" placeholder="Job Description" required>
-            <input type="submit" value="Post Job">
+        <h3>➕ <a href="#" onclick="openJobForm()">Post a New Job</a></h3>
+        <form id="jobForm" action="{{ url_for('post_job') }}" method="GET" style="display:none;">
+            <input type="text" id="jobName" name="job_name" placeholder="Job Name" required>
+            <button type="submit">Proceed</button>
         </form>
     </section>
 </div>
 
 <script>
+    function openJobForm() {
+        document.getElementById("jobForm").style.display = "block";
+    }
+
     function editJob(jobId) {
-        alert("Edit Job: " + jobId);
+        window.location.href = `/edit_job/${jobId}`;
     }
 
     function cancelJob(jobId) {
         if (confirm("Are you sure you want to cancel this job?")) {
-            alert("Job " + jobId + " canceled.");
-            // Server request to cancel job goes here
+            fetch(`/delete_job/${jobId}`, { method: 'POST' }).then(() => {
+                location.reload();
+            });
         }
     }
 </script>
