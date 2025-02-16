@@ -60,6 +60,25 @@ def home():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
+@app.route('/createdb')
+def create_db():
+    with app.app_context():
+        try:
+            db.create_all()
+            return "Database created successfully!"
+        except Exception as e:
+            return f"Database creation failed: {str(e)}"
+
+@app.route('/updatedb')
+def update_db():
+    with app.app_context():
+        try:
+            from flask_migrate import upgrade
+            upgrade()
+            return "Database migrations applied successfully!"
+        except Exception as e:
+            return f"Migration update failed: {str(e)}"
+
 @app.route('/create_admin')
 def create_admin():
     with app.app_context():
