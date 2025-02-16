@@ -56,7 +56,9 @@ def session_timeout_check():
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/create_admin')
 def create_admin():
