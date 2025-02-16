@@ -19,6 +19,15 @@
         <button onclick="location.href='#'">Assign Jobs</button>
         <button onclick="location.href='#'">Cancel Jobs</button>
     </section>
+
+
+<section><h3>🔄 View As:</h3>
+<ul>
+    <li><a href="{{ url_for('view_as', role='driver') }}">👨‍✈️ View as Driver</a></li>
+    <li><a href="{{ url_for('view_as', role='manager') }}">📊 View as Manager</a></li>
+    <li><a href="{{ url_for('return_to_admin') }}">🔙 Return to Admin Mode</a></li>
+</ul>
+</section>
 </div>
 
 <script>
