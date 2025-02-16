@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Automax Transport{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">Automax Transport</a>
+        </div>
+        <ul class="nav-links">
+            {% if current_user.is_authenticated %}
+                {% if current_user.role == "driver" %}
+                    <li><a href="{{ url_for('dashboard') }}">My Jobs</a></li>
+                {% elif current_user.role == "manager" %}
+                    <li><a href="{{ url_for('manager_dashboard') }}">Manage Jobs</a></li>
+                {% elif current_user.role == "admin" %}
+                    <li><a href="{{ url_for('admin_dashboard') }}">Admin Panel</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
