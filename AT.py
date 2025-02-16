@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
+import os, datetime
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")  # Change this in production!
@@ -17,6 +17,7 @@ if db_url.startswith("postgres://"):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(minutes=15)  # Auto logout after 15 min inactivity
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -48,18 +49,35 @@ class User(db.Model, UserMixin):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+@app.before_request
+def session_timeout_check():
+    session.permanent = True  # Ensures session is tracked properly
+    session.modified = True  # Updates session timestamp
+
 @app.route('/')
 def home():
     return "Automax Transport - Web App Running!"
+
+@app.route('/create_admin')
+def create_admin():
+    with app.app_context():
+        admin_user = User.query.filter_by(username='Admin').first()
+        if not admin_user:
+            admin_user = User(username='Admin', role='admin')
+            admin_user.set_password('Password')
+            db.session.add(admin_user)
+            db.session.commit()
+        return "Admin user created successfully!"
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        remember = 'remember' in request.form  # Check if 'Remember Me' was selected
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=remember)
             return redirect(url_for('dashboard'))
         return render_template("login.html", error="Invalid credentials!")
     return render_template("login.html")
