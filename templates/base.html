@@ -29,6 +29,19 @@
             {% endif %}
         </ul>
         <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+
+
+        {% if current_user.is_authenticated and current_user.role == "admin" %}
+    <div class="view-as-dropdown">
+        <button class="view-as-button">🔄 View As ▼</button>
+        <ul class="dropdown-content">
+            <li><a href="{{ url_for('view_as', role='driver') }}">👨‍✈️ Driver</a></li>
+            <li><a href="{{ url_for('view_as', role='manager') }}">📊 Manager</a></li>
+            <li><a href="{{ url_for('return_to_admin') }}">🔙 Return to Admin</a></li>
+        </ul>
+    </div>
+{% endif %}
+
     </nav>
     
     <main>
