@@ -117,14 +117,15 @@ def init_db():
 
 @app.route('/makemigrations')
 def make_migrations():
-    """Creates migration files (detects changes to models)."""
+    """Creates a new migration."""
     with app.app_context():
         try:
-            from flask_migrate import migrate
+            from flask_migrate import init, migrate
             migrate()
             return "Migrations created successfully!"
         except Exception as e:
-            return f"Migration creation failed: {str(e)}"
+            return f"Migration failed: {str(e)}"
+
 
 
 @app.route('/createdb')
