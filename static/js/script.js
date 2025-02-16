@@ -1,17 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
     console.log("Automax Transport JS Loaded!");
-});
-document.addEventListener("DOMContentLoaded", function () {
+
+    // Mobile Menu Toggle
     const menuToggle = document.querySelector(".menu-toggle");
     const navLinks = document.querySelector(".nav-links");
 
-    menuToggle.addEventListener("click", function () {
-        navLinks.classList.toggle("show");
-    });
-});
+    if (menuToggle) {
+        menuToggle.addEventListener("click", function () {
+            navLinks.classList.toggle("show");
+        });
+    }
 
-
-document.addEventListener("DOMContentLoaded", function () {
+    // View As Dropdown Toggle
     const viewAsButton = document.querySelector(".view-as-button");
     const dropdownContent = document.querySelector(".dropdown-content");
 
