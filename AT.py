@@ -158,16 +158,23 @@ def post_job():
 
     if request.method == 'POST':
         description = request.form['description']
-        pickup_location = request.form['pickup_location']
-        dropoff_location = request.form['dropoff_location']
-        branch = current_user.branch if current_user.role == "manager" else request.form['branch']
+        branch = request.form['branch']
+        stops = request.form.getlist('stops[]')
 
-        new_job = Job(description=description, pickup_location=pickup_location, dropoff_location=dropoff_location, branch=branch)
+        new_job = Job(description=description, branch=branch, created_by=current_user.id)
         db.session.add(new_job)
+        db.session.commit()
+
+        # Add stops
+        for idx, stop in enumerate(stops):
+            new_stop = JobStop(job_id=new_job.id, sequence=idx + 1, location=stop)
+            db.session.add(new_stop)
+        
         db.session.commit()
         return redirect(url_for('dashboard'))
 
     return render_template("post_job.html")
+
 
 @app.route('/edit_job/<int:job_id>', methods=['GET', 'POST'])
 @login_required
@@ -205,6 +212,7 @@ def accept_job(job_id):
         job.status = "In Progress"
         db.session.commit()
     return redirect(url_for('dashboard'))
+
 
 
 if __name__ == '__main__':
