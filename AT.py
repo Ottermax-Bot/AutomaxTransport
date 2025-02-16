@@ -92,6 +92,20 @@ def home():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
+
+@app.route('/resetdb')
+def reset_db():
+    """Drops and recreates the database (for full reset)."""
+    with app.app_context():
+        try:
+            db.drop_all()
+            db.create_all()
+            return "Database reset successfully!"
+        except Exception as e:
+            return f"Database reset failed: {str(e)}"
+
+
+
 @app.route('/createdb')
 def create_db():
     with app.app_context():
