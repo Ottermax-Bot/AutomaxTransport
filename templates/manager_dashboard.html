@@ -10,16 +10,20 @@
 
     <h3>Manage Jobs</h3>
     <ul>
-        <li><a href="#">Post New Job</a></li>
-        <li><a href="#">View Pending Jobs</a></li>
-        <li><a href="#">Assign Drivers</a></li>
+        {% for job in jobs %}
+            {% if job.branch == user.branch %}
+                <li>🚙 Job: {{ job.description }} - <a href="#">Edit</a> | <a href="#">Cancel</a></li>
+            {% else %}
+                <li>🚙 Job (Other Branch): {{ job.description }}</li>
+            {% endif %}
+        {% endfor %}
     </ul>
 
-    <h3>View Drivers</h3>
-    <ul>
-        <li><a href="#">Driver Schedules</a></li>
-        <li><a href="#">Approve Time-Off</a></li>
-    </ul>
+    <h3>Post a New Job</h3>
+    <form action="#" method="POST">
+        <input type="text" name="description" placeholder="Job Description" required>
+        <input type="submit" value="Post Job">
+    </form>
 </div>
 
 {% endblock %}
