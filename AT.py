@@ -17,7 +17,7 @@ app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")  # Change this in pro
 # SQLAlchemy Configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL", "postgresql://automaxsql_user:BxYaSA6x1cpBCymyo0t3cUuzDcF8gAKg@dpg-cunpfc8gph6c73f0u7n0-a/automaxsql"
-)  # Read from environment variable or fallback to hardcoded URI
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize SQLAlchemy and Flask-Migrate
@@ -28,7 +28,13 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# User model
+# Ensure all required dependencies are installed
+try:
+    import flask_login
+except ImportError:
+    raise ImportError("Missing 'flask_login'. Run 'pip install flask-login' and restart.")
+
+# User Model
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -42,13 +48,14 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+# Job Model
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255), nullable=False)
     branch = db.Column(db.String(50), nullable=False)  # Branch creating the job
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     assigned_driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    status = db.Column(db.String(50), default="Pending")  # Pending, In Progress, Paused, Completed
+    status = db.Column(db.String(50), default="Pending")  # Pending, In Progress, Completed
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     stops = db.relationship("JobStop", backref="job", lazy=True)
@@ -64,7 +71,7 @@ class JobStop(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))  # Fixed SQLAlchemy 2.0 issue
 
 @app.route('/')
 def home():
@@ -72,105 +79,17 @@ def home():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
-@app.route('/run-migrations', methods=['GET'])
-@login_required
-def run_migrations():
-    if current_user.role != "admin":
-        return "Unauthorized. Only admins can run migrations.", 403
-
-    try:
-        with app.app_context():
-            from flask_migrate import upgrade
-            upgrade()
-        return "Database migrations applied successfully!", 200
-    except Exception as e:
-        return f"An error occurred during migrations: {e}", 500
-
-
-@app.route("/reset-database", methods=["GET"])
-@login_required
-def reset_database():
-    """
-    Reset the database by dropping all tables and recreating them.
-    USE WITH CAUTION! This should only be enabled in a safe testing environment.
-    """
-    if current_user.role != "admin":
-        return "Unauthorized. Only admins can reset the database.", 403
-
-    try:
-        with app.app_context():
-            db.session.remove()  # Close any existing sessions
-            db.drop_all()
-            db.create_all()
-        return "Database has been reset successfully!", 200
-    except Exception as e:
-        return f"An error occurred during database reset: {e}", 500
-
-
-
-@app.route('/create_admin')
-def create_admin():
-    with app.app_context():
-        try:
-            admin_user = User.query.filter_by(username='Admin').first()
-            if not admin_user:
-                admin_user = User(username='Admin', role='admin')
-                admin_user.set_password('Password')
-                db.session.add(admin_user)
-                db.session.commit()
-            return "Admin user created successfully!"
-        except Exception as e:
-            db.session.rollback()
-            return f"Error creating admin: {str(e)}"
-
-@app.route('/createmanager')
-def create_manager():
-    with app.app_context():
-        try:
-            manager_user = User.query.filter_by(username='Manager').first()
-            if not manager_user:
-                manager_user = User(username='Manager', role='manager', branch="Rome")
-                manager_user.set_password('Password')
-                db.session.add(manager_user)
-                db.session.commit()
-            return "Manager user created successfully!"
-        except Exception as e:
-            db.session.rollback()
-            return f"Error creating manager: {str(e)}"
-
-@app.route('/createdriver')
-def create_driver():
-    with app.app_context():
-        try:
-            driver_user = User.query.filter_by(username='Driver').first()
-            if not driver_user:
-                driver_user = User(username='Driver', role='driver')
-                driver_user.set_password('Password')
-                db.session.add(driver_user)
-                db.session.commit()
-            return "Driver user created successfully!"
-        except Exception as e:
-            db.session.rollback()
-            return f"Error creating driver: {str(e)}"
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        remember = 'remember' in request.form  
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            login_user(user, remember=remember)
+            login_user(user)
             return redirect(url_for('dashboard'))
         return render_template("login.html", error="Invalid credentials!")
     return render_template("login.html")
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('home'))
 
 @app.route('/dashboard')
 @login_required
@@ -178,30 +97,25 @@ def dashboard():
     if current_user.role == "admin":
         return render_template("admin_dashboard.html", user=current_user)
     elif current_user.role == "manager":
-        jobs = Job.query.filter((Job.branch == current_user.branch) | (Job.branch.is_(None))).all()
+        jobs = Job.query.filter_by(branch=current_user.branch).all()
         return render_template("manager_dashboard.html", user=current_user, jobs=jobs)
     else:
         available_jobs = Job.query.filter_by(assigned_driver_id=None).all()
         accepted_jobs = Job.query.filter_by(assigned_driver_id=current_user.id).all()
         return render_template("driver_dashboard.html", user=current_user, available_jobs=available_jobs, accepted_jobs=accepted_jobs)
 
-@app.route('/post_job', methods=['GET', 'POST'])  # Ensuring both GET and POST methods
+@app.route('/post_job', methods=['GET', 'POST'])
 @login_required
 def post_job():
     if current_user.role not in ["admin", "manager"]:
         return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':  # Ensuring POST handling
-        description = request.form.get('description')
-        branch = current_user.branch  # Auto-assign based on manager's branch
-
-        if not description:
-            return "Job description cannot be empty", 400
-
+    if request.method == 'POST':
+        description = request.form['description']
+        branch = current_user.branch
         new_job = Job(description=description, branch=branch, created_by=current_user.id)
         db.session.add(new_job)
         db.session.commit()
-
         return redirect(url_for('dashboard'))
 
     return render_template("post_job.html")
@@ -216,7 +130,32 @@ def accept_job(job_id):
         db.session.commit()
     return redirect(url_for('dashboard'))
 
+@app.route('/reset_database', methods=["GET"])
+@login_required
+def reset_database():
+    if current_user.role != "admin":
+        return "Unauthorized. Only admins can reset the database.", 403
 
+    try:
+        db.session.remove()
+        db.drop_all()
+        db.create_all()
+        return "Database has been reset successfully!", 200
+    except Exception as e:
+        return f"An error occurred: {e}", 500
+
+@app.route('/run_migrations', methods=['GET'])
+@login_required
+def run_migrations():
+    if current_user.role != "admin":
+        return "Unauthorized. Only admins can run migrations.", 403
+
+    try:
+        from flask_migrate import upgrade
+        upgrade()
+        return "Database migrations applied successfully!", 200
+    except Exception as e:
+        return f"An error occurred: {e}", 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
