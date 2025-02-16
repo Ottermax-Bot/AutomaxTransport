@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Dashboard{% endblock %}
+
+{% block content %}
+<h2>Welcome, {{ user.username }}!</h2>
+
+<div class="dashboard-container">
+    <h3>Your Assigned Jobs</h3>
+    <ul>
+        {% for job in accepted_jobs %}
+        <li>🚗 Job: {{ job.description }} | Pickup: {{ job.pickup_location }} → Dropoff: {{ job.dropoff_location }} | Status: {{ job.status }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Available Jobs</h3>
+    <ul>
+        {% for job in available_jobs %}
+        <li>🚙 Job: {{ job.description }} | <a href="#">Accept Job</a></li>
+        {% endfor %}
+    </ul>
+
+    <h3>Account Actions</h3>
+    <ul>
+        <li><a href="#">Request Time-Off</a></li>
+        <li><a href="#">View Work Hours</a></li>
+    </ul>
+</div>
+
+{% endblock %}
