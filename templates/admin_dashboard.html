@@ -6,19 +6,26 @@
 <h2>Welcome, Admin {{ user.username }}!</h2>
 
 <div class="dashboard-container">
-    <h3>Manage Users</h3>
-    <ul>
-        <li><a href="#">View All Users</a></li>
-        <li><a href="#">Add New User</a></li>
-        <li><a href="#">Modify User Roles</a></li>
-    </ul>
+    <section>
+        <h3>👥 Manage Users</h3>
+        <button onclick="location.href='#'">View All Users</button>
+        <button onclick="location.href='#'">Add New User</button>
+        <button onclick="location.href='#'">Modify User Roles</button>
+    </section>
 
-    <h3>Manage Jobs</h3>
-    <ul>
-        <li><a href="#">View All Jobs</a></li>
-        <li><a href="#">Assign Jobs</a></li>
-        <li><a href="#">Cancel Jobs</a></li>
-    </ul>
+    <section>
+        <h3>📋 Manage Jobs</h3>
+        <button onclick="location.href='#'">View All Jobs</button>
+        <button onclick="location.href='#'">Assign Jobs</button>
+        <button onclick="location.href='#'">Cancel Jobs</button>
+    </section>
 </div>
+
+<script>
+    // Placeholder JavaScript for interactive admin functions
+    function manageUsers(action) {
+        alert("This will allow admin to " + action);
+    }
+</script>
 
 {% endblock %}
