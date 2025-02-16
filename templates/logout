@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Logging Out - Automax Transport{% endblock %}
+
+{% block content %}
+<div class="logout-container">
+    <h2>Safely logging you out, {{ username }}...</h2>
+</div>
+
+<script>
+    setTimeout(() => {
+        window.location.href = "{{ url_for('login') }}";
+    }, 3000);  // Redirect after 3 seconds
+</script>
+
+<style>
+    .logout-container {
+        text-align: center;
+        font-size: 1.5rem;
+        padding: 50px;
+        animation: fadeOut 2.5s ease-out;
+    }
+    
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+</style>
+{% endblock %}
