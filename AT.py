@@ -214,6 +214,25 @@ def accept_job(job_id):
     return redirect(url_for('dashboard'))
 
 
+@app.route('/complete_stop/<int:stop_id>', methods=['POST'])
+@login_required
+def complete_stop(stop_id):
+    stop = JobStop.query.get_or_404(stop_id)
+    if current_user.role != "driver" or stop.job.assigned_driver_id != current_user.id:
+        return redirect(url_for('dashboard'))
+    
+    stop.completed = True
+    stop.completed_at = datetime.datetime.utcnow()
+
+    # Check if all stops are completed
+    all_stops_completed = all(s.completed for s in stop.job.stops)
+    if all_stops_completed:
+        stop.job.status = "Completed"
+
+    db.session.commit()
+    return redirect(url_for('dashboard'))
+
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
