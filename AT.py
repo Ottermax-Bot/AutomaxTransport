@@ -25,6 +25,12 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+# Ensure all required dependencies are installed
+try:
+    import flask_login
+except ImportError:
+    raise ImportError("Missing 'flask_login'. Run 'pip install flask-login' and restart.")
+
 # User model
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
