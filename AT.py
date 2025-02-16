@@ -28,12 +28,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# Ensure all required dependencies are installed
-try:
-    import flask_login
-except ImportError:
-    raise ImportError("Missing 'flask_login'. Run 'pip install flask-login' and restart.")
-
 # User model
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,7 +42,6 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255), nullable=False)
@@ -58,7 +51,6 @@ class Job(db.Model):
     status = db.Column(db.String(50), default="Pending")  # Pending, In Progress, Paused, Completed
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    # Multi-stop locations
     stops = db.relationship("JobStop", backref="job", lazy=True)
 
 class JobStop(db.Model):
@@ -70,21 +62,9 @@ class JobStop(db.Model):
     completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
 
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-@app.before_request
-def session_timeout_check():
-    session.permanent = True  # Ensures session is tracked properly
-    session.modified = True  # Updates session timestamp
 
 @app.route('/')
 def home():
@@ -92,10 +72,8 @@ def home():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
-
 @app.route('/resetdb')
 def reset_db():
-    """Drops and recreates the database (for full reset)."""
     with app.app_context():
         try:
             db.drop_all()
@@ -106,36 +84,24 @@ def reset_db():
 
 @app.route('/initdb')
 def init_db():
-    """Initializes migrations (if not already set up)."""
     with app.app_context():
         try:
             from flask_migrate import init
-            init()
+            if not os.path.exists('migrations'):
+                init()
             return "Migrations initialized successfully!"
         except Exception as e:
             return f"Migration initialization failed: {str(e)}"
 
 @app.route('/makemigrations')
 def make_migrations():
-    """Creates a new migration."""
     with app.app_context():
         try:
-            from flask_migrate import init, migrate
+            from flask_migrate import migrate
             migrate()
             return "Migrations created successfully!"
         except Exception as e:
             return f"Migration failed: {str(e)}"
-
-
-
-@app.route('/createdb')
-def create_db():
-    with app.app_context():
-        try:
-            db.create_all()
-            return "Database created successfully!"
-        except Exception as e:
-            return f"Database creation failed: {str(e)}"
 
 @app.route('/updatedb')
 def update_db():
@@ -150,73 +116,54 @@ def update_db():
 @app.route('/create_admin')
 def create_admin():
     with app.app_context():
-        admin_user = User.query.filter_by(username='Admin').first()
-        if not admin_user:
-            admin_user = User(username='Admin', role='admin')
-            admin_user.set_password('Password')
-            db.session.add(admin_user)
-            db.session.commit()
-        return "Admin user created successfully!"
-
+        try:
+            admin_user = User.query.filter_by(username='Admin').first()
+            if not admin_user:
+                admin_user = User(username='Admin', role='admin')
+                admin_user.set_password('Password')
+                db.session.add(admin_user)
+                db.session.commit()
+            return "Admin user created successfully!"
+        except Exception as e:
+            db.session.rollback()
+            return f"Error creating admin: {str(e)}"
 
 @app.route('/createmanager')
 def create_manager():
-    """Creates a test manager account with basic credentials."""
     with app.app_context():
-        manager_user = User.query.filter_by(username='Manager').first()
-        if not manager_user:
-            manager_user = User(username='Manager', role='manager', branch="Rome")
-            manager_user.set_password('Password')
-            db.session.add(manager_user)
-            db.session.commit()
-        return "Manager user created successfully! Login with Manager:Password"
+        try:
+            manager_user = User.query.filter_by(username='Manager').first()
+            if not manager_user:
+                manager_user = User(username='Manager', role='manager', branch="Rome")
+                manager_user.set_password('Password')
+                db.session.add(manager_user)
+                db.session.commit()
+            return "Manager user created successfully!"
+        except Exception as e:
+            db.session.rollback()
+            return f"Error creating manager: {str(e)}"
 
 @app.route('/createdriver')
 def create_driver():
-    """Creates a test driver account with basic credentials."""
     with app.app_context():
-        driver_user = User.query.filter_by(username='Driver').first()
-        if not driver_user:
-            driver_user = User(username='Driver', role='driver')
-            driver_user.set_password('Password')
-            db.session.add(driver_user)
-            db.session.commit()
-        return "Driver user created successfully! Login with Driver:Password"
-
-
-@app.route('/viewas/<role>')
-@login_required
-def view_as(role):
-    """Allows admin to view the dashboard as a driver or manager."""
-    if current_user.role != "admin":
-        return redirect(url_for('dashboard'))  # Only admins can use this feature
-
-    session['original_role'] = current_user.role  # Store original role in session
-
-    if role == "driver":
-        return redirect(url_for('dashboard', fake_role="driver"))
-    elif role == "manager":
-        return redirect(url_for('dashboard', fake_role="manager"))
-    else:
-        return redirect(url_for('dashboard'))
-
-
-@app.route('/returntoadmin')
-@login_required
-def return_to_admin():
-    """Allows admin to switch back to their actual role."""
-    if 'original_role' in session:
-        session.pop('original_role', None)
-    return redirect(url_for('dashboard'))
-
-
+        try:
+            driver_user = User.query.filter_by(username='Driver').first()
+            if not driver_user:
+                driver_user = User(username='Driver', role='driver')
+                driver_user.set_password('Password')
+                db.session.add(driver_user)
+                db.session.commit()
+            return "Driver user created successfully!"
+        except Exception as e:
+            db.session.rollback()
+            return f"Error creating driver: {str(e)}"
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        remember = 'remember' in request.form  # Check if 'Remember Me' was selected
+        remember = 'remember' in request.form  
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             login_user(user, remember=remember)
@@ -227,9 +174,8 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    username = current_user.username
     logout_user()
-    return render_template("logout.html", username=username)
+    return redirect(url_for('home'))
 
 @app.route('/dashboard')
 @login_required
@@ -244,8 +190,6 @@ def dashboard():
         accepted_jobs = Job.query.filter_by(assigned_driver_id=current_user.id).all()
         return render_template("driver_dashboard.html", user=current_user, available_jobs=available_jobs, accepted_jobs=accepted_jobs)
 
-
-
 @app.route('/post_job', methods=['GET', 'POST'])
 @login_required
 def post_job():
@@ -254,16 +198,13 @@ def post_job():
 
     if request.method == 'POST':
         description = request.form['description']
-        branch = current_user.branch  # Auto-assign based on manager's branch
-
-        # Ensure stops are correctly processed
+        branch = current_user.branch  
         stops = request.form.getlist('stops[]')
 
         new_job = Job(description=description, branch=branch, created_by=current_user.id)
         db.session.add(new_job)
         db.session.commit()
 
-        # Add multi-stop locations
         for idx, stop in enumerate(stops):
             new_stop = JobStop(job_id=new_job.id, sequence=idx + 1, location=stop)
             db.session.add(new_stop)
@@ -272,66 +213,6 @@ def post_job():
         return redirect(url_for('dashboard'))
 
     return render_template("post_job.html")
-
-
-
-@app.route('/edit_job/<int:job_id>', methods=['GET', 'POST'])
-@login_required
-def edit_job(job_id):
-    job = Job.query.get_or_404(job_id)
-    if current_user.role != "admin" and current_user.branch != job.branch:
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        job.description = request.form['description']
-        job.pickup_location = request.form['pickup_location']
-        job.dropoff_location = request.form['dropoff_location']
-        db.session.commit()
-        return redirect(url_for('dashboard'))
-
-    return render_template("edit_job.html", job=job)
-
-@app.route('/delete_job/<int:job_id>', methods=['POST'])
-@login_required
-def delete_job(job_id):
-    job = Job.query.get_or_404(job_id)
-    if current_user.role != "admin" and current_user.branch != job.branch:
-        return redirect(url_for('dashboard'))
-
-    db.session.delete(job)
-    db.session.commit()
-    return redirect(url_for('dashboard'))
-
-@app.route('/accept_job/<int:job_id>', methods=['POST'])
-@login_required
-def accept_job(job_id):
-    job = Job.query.get_or_404(job_id)
-    if job.assigned_driver_id is None and current_user.role == "driver":
-        job.assigned_driver_id = current_user.id
-        job.status = "In Progress"
-        db.session.commit()
-    return redirect(url_for('dashboard'))
-
-
-@app.route('/complete_stop/<int:stop_id>', methods=['POST'])
-@login_required
-def complete_stop(stop_id):
-    stop = JobStop.query.get_or_404(stop_id)
-    if current_user.role != "driver" or stop.job.assigned_driver_id != current_user.id:
-        return redirect(url_for('dashboard'))
-    
-    stop.completed = True
-    stop.completed_at = datetime.datetime.utcnow()
-
-    # Check if all stops are completed
-    all_stops_completed = all(s.completed for s in stop.job.stops)
-    if all_stops_completed:
-        stop.job.status = "Completed"
-
-    db.session.commit()
-    return redirect(url_for('dashboard'))
-
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
