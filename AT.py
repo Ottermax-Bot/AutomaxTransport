@@ -81,15 +81,26 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    predefined_users = {
+        "admin": {"password": "adminpass", "role": "admin"},
+        "manager": {"password": "managerpass", "role": "manager", "branch": "Rome"},
+        "driver": {"password": "driverpass", "role": "driver"},
+    }
+
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].lower()  # Make login case-insensitive
         password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+
+        if username in predefined_users and predefined_users[username]["password"] == password:
+            # Create a mock user object for session handling
+            user = User(id=999, username=username, role=predefined_users[username]["role"], branch=predefined_users[username].get("branch"))
             login_user(user)
             return redirect(url_for('dashboard'))
+        
         return render_template("login.html", error="Invalid credentials!")
+
     return render_template("login.html")
+
 
 @app.route('/dashboard')
 @login_required
