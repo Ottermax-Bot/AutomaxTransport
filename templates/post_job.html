@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Post a Multi-Stop Job{% endblock %}
+
+{% block content %}
+<h2>Post a New Job</h2>
+<form action="{{ url_for('post_job') }}" method="POST">
+    <label>Job Description:</label>
+    <input type="text" name="description" required>
+
+    <label>Branch:</label>
+    <select name="branch" required>
+        <option value="Rome">Rome</option>
+        <option value="Cartersville">Cartersville</option>
+        <option value="Atlanta">Atlanta</option>
+    </select>
+
+    <h3>Stops:</h3>
+    <div id="stops">
+        <div class="stop">
+            <label>Location:</label>
+            <input type="text" name="stops[]" required>
+        </div>
+    </div>
+    <button type="button" onclick="addStop()">+ Add Stop</button>
+
+    <button type="submit">Post Job</button>
+</form>
+
+<script>
+function addStop() {
+    const stopDiv = document.createElement("div");
+    stopDiv.classList.add("stop");
+    stopDiv.innerHTML = `
+        <label>Location:</label>
+        <input type="text" name="stops[]" required>
+    `;
+    document.getElementById("stops").appendChild(stopDiv);
+}
+</script>
+{% endblock %}
