@@ -72,46 +72,33 @@ def home():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
-@app.route('/resetdb')
-def reset_db():
-    with app.app_context():
-        try:
-            db.drop_all()
-            db.create_all()
-            return "Database reset successfully!"
-        except Exception as e:
-            return f"Database reset failed: {str(e)}"
+@app.route('/run-migrations', methods=['GET'])
+def run_migrations():
+    """Run database migrations to apply schema changes."""
+    from flask_migrate import upgrade
+    try:
+        upgrade()  # Apply migrations
+        return "Database migrations applied successfully!", 200
+    except Exception as e:
+        return f"An error occurred: {e}", 500
 
-@app.route('/initdb')
-def init_db():
-    with app.app_context():
-        try:
-            from flask_migrate import init
-            if not os.path.exists('migrations'):
-                init()
-            return "Migrations initialized successfully!"
-        except Exception as e:
-            return f"Migration initialization failed: {str(e)}"
+@app.route("/reset-database", methods=["GET"])
+@login_required  # Ensures only logged-in users can run this
+def reset_database():
+    """Reset the database by dropping and recreating all tables."""
+    if current_user.role != "admin":
+        return "Unauthorized. Only admins can reset the database.", 403
 
-@app.route('/makemigrations')
-def make_migrations():
-    with app.app_context():
-        try:
-            from flask_migrate import migrate
-            migrate()
-            return "Migrations created successfully!"
-        except Exception as e:
-            return f"Migration failed: {str(e)}"
+    from flask_migrate import upgrade
+    try:
+        db.drop_all()  # Drop tables
+        db.create_all()  # Recreate tables
+        upgrade()  # Apply migrations
+        return "Database has been reset successfully!", 200
+    except Exception as e:
+        return f"An error occurred during database reset: {e}", 500
 
-@app.route('/updatedb')
-def update_db():
-    with app.app_context():
-        try:
-            from flask_migrate import upgrade
-            upgrade()
-            return "Database migrations applied successfully!"
-        except Exception as e:
-            return f"Migration update failed: {str(e)}"
+
 
 @app.route('/create_admin')
 def create_admin():
@@ -190,29 +177,27 @@ def dashboard():
         accepted_jobs = Job.query.filter_by(assigned_driver_id=current_user.id).all()
         return render_template("driver_dashboard.html", user=current_user, available_jobs=available_jobs, accepted_jobs=accepted_jobs)
 
-@app.route('/post_job', methods=['GET', 'POST'])
+@app.route('/post_job', methods=['GET', 'POST'])  # Ensuring both GET and POST methods
 @login_required
 def post_job():
     if current_user.role not in ["admin", "manager"]:
         return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':
-        description = request.form['description']
-        branch = current_user.branch  
-        stops = request.form.getlist('stops[]')
+    if request.method == 'POST':  # Ensuring POST handling
+        description = request.form.get('description')
+        branch = current_user.branch  # Auto-assign based on manager's branch
+
+        if not description:
+            return "Job description cannot be empty", 400
 
         new_job = Job(description=description, branch=branch, created_by=current_user.id)
         db.session.add(new_job)
         db.session.commit()
 
-        for idx, stop in enumerate(stops):
-            new_stop = JobStop(job_id=new_job.id, sequence=idx + 1, location=stop)
-            db.session.add(new_stop)
-
-        db.session.commit()
         return redirect(url_for('dashboard'))
 
     return render_template("post_job.html")
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
