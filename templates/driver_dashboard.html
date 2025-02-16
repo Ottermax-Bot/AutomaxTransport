@@ -6,25 +6,47 @@
 <h2>Welcome, {{ user.username }}!</h2>
 
 <div class="dashboard-container">
-    <h3>Your Assigned Jobs</h3>
-    <ul>
-        {% for job in accepted_jobs %}
-        <li>🚗 Job: {{ job.description }} | Pickup: {{ job.pickup_location }} → Dropoff: {{ job.dropoff_location }} | Status: {{ job.status }}</li>
-        {% endfor %}
-    </ul>
+    <section>
+        <h3>📌 Your Assigned Jobs</h3>
+        <ul class="job-list">
+            {% for job in accepted_jobs %}
+            <li>
+                🚗 {{ job.description }}  
+                <br>📍 {{ job.pickup_location }} → {{ job.dropoff_location }} 
+                <br>🕒 Status: <strong>{{ job.status }}</strong>
+            </li>
+            {% else %}
+            <li>No assigned jobs yet.</li>
+            {% endfor %}
+        </ul>
+    </section>
 
-    <h3>Available Jobs</h3>
-    <ul>
-        {% for job in available_jobs %}
-        <li>🚙 Job: {{ job.description }} | <a href="#">Accept Job</a></li>
-        {% endfor %}
-    </ul>
+    <section>
+        <h3>🛠 Available Jobs</h3>
+        <ul class="job-list">
+            {% for job in available_jobs %}
+            <li>
+                🚙 {{ job.description }}  
+                <button onclick="acceptJob('{{ job.id }}')">✅ Accept Job</button>
+            </li>
+            {% else %}
+            <li>No jobs available right now.</li>
+            {% endfor %}
+        </ul>
+    </section>
 
-    <h3>Account Actions</h3>
-    <ul>
-        <li><a href="#">Request Time-Off</a></li>
-        <li><a href="#">View Work Hours</a></li>
-    </ul>
+    <section>
+        <h3>⚙ Account Actions</h3>
+        <button onclick="location.href='#'">Request Time-Off</button>
+        <button onclick="location.href='#'">View Work Hours</button>
+    </section>
 </div>
+
+<script>
+    function acceptJob(jobId) {
+        alert("Accepted Job ID: " + jobId);
+        // Here, you would send a request to the server to accept the job
+    }
+</script>
 
 {% endblock %}
