@@ -26,19 +26,11 @@
 
     <!-- Post New Job Section -->
     <section>
-        <h3>➕ <a href="#" onclick="openJobForm()">Post a New Job</a></h3>
-        <form id="jobForm" action="{{ url_for('post_job') }}" method="GET" style="display:none;">
-            <input type="text" id="jobName" name="job_name" placeholder="Job Name" required>
-            <button type="submit">Proceed</button>
-        </form>
+        <h3>➕ <a href="{{ url_for('post_job') }}">Post a New Job</a></h3>
     </section>
 </div>
 
 <script>
-    function openJobForm() {
-        document.getElementById("jobForm").style.display = "block";
-    }
-
     function editJob(jobId) {
         window.location.href = `/edit_job/${jobId}`;
     }
