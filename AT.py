@@ -146,11 +146,13 @@ def dashboard():
     if current_user.role == "admin":
         return render_template("admin_dashboard.html", user=current_user)
     elif current_user.role == "manager":
-        return render_template("manager_dashboard.html", user=current_user, jobs_visible_to_all=True)
+        jobs = Job.query.filter((Job.branch == current_user.branch) | (Job.branch.is_(None))).all()
+        return render_template("manager_dashboard.html", user=current_user, jobs=jobs)
     else:
         available_jobs = Job.query.filter_by(assigned_driver_id=None).all()
         accepted_jobs = Job.query.filter_by(assigned_driver_id=current_user.id).all()
         return render_template("driver_dashboard.html", user=current_user, available_jobs=available_jobs, accepted_jobs=accepted_jobs)
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
