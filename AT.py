@@ -72,6 +72,22 @@ def create_db():
         except Exception as e:
             return f"Database creation failed: {str(e)}"
 
+@app.route('/init_migrations')
+def init_migrations():
+    with app.app_context():
+        try:
+            from flask_migrate import init
+            import os
+
+            if not os.path.exists("migrations"):
+                init()
+                return "Migrations initialized successfully!"
+            else:
+                return "Migrations folder already exists."
+        except Exception as e:
+            return f"Migration initialization failed: {str(e)}"
+
+
 @app.route('/updatedb')
 def update_db():
     with app.app_context():
