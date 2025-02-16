@@ -73,14 +73,19 @@ def home():
     return redirect(url_for('login'))
 
 @app.route('/run-migrations', methods=['GET'])
+@login_required
 def run_migrations():
-    """Run database migrations to apply schema changes."""
-    from flask_migrate import upgrade
+    if current_user.role != "admin":
+        return "Unauthorized. Only admins can run migrations.", 403
+
     try:
-        upgrade()  # Apply migrations
+        with app.app_context():
+            from flask_migrate import upgrade
+            upgrade()
         return "Database migrations applied successfully!", 200
     except Exception as e:
-        return f"An error occurred: {e}", 500
+        return f"An error occurred during migrations: {e}", 500
+
 
 @app.route("/reset-database", methods=["GET"])
 @login_required
