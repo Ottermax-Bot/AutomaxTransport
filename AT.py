@@ -104,6 +104,27 @@ def reset_db():
         except Exception as e:
             return f"Database reset failed: {str(e)}"
 
+@app.route('/initdb')
+def init_db():
+    """Initializes migrations (if not already set up)."""
+    with app.app_context():
+        try:
+            from flask_migrate import init
+            init()
+            return "Migrations initialized successfully!"
+        except Exception as e:
+            return f"Migration initialization failed: {str(e)}"
+
+@app.route('/makemigrations')
+def make_migrations():
+    """Creates migration files (detects changes to models)."""
+    with app.app_context():
+        try:
+            from flask_migrate import migrate
+            migrate()
+            return "Migrations created successfully!"
+        except Exception as e:
+            return f"Migration creation failed: {str(e)}"
 
 
 @app.route('/createdb')
