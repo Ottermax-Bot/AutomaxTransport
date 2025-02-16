@@ -88,6 +88,17 @@ def init_migrations():
             return f"Migration initialization failed: {str(e)}"
 
 
+@app.route('/makemigrations')
+def make_migrations():
+    with app.app_context():
+        try:
+            from flask_migrate import migrate
+            migrate()
+            return "Migrations created successfully!"
+        except Exception as e:
+            return f"Migration creation failed: {str(e)}"
+
+
 @app.route('/updatedb')
 def update_db():
     with app.app_context():
