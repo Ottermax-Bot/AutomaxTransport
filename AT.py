@@ -253,22 +253,25 @@ def post_job():
 
     if request.method == 'POST':
         description = request.form['description']
-        branch = request.form['branch']
+        branch = current_user.branch  # Auto-assign based on manager's branch
+
+        # Ensure stops are correctly processed
         stops = request.form.getlist('stops[]')
 
         new_job = Job(description=description, branch=branch, created_by=current_user.id)
         db.session.add(new_job)
         db.session.commit()
 
-        # Add stops
+        # Add multi-stop locations
         for idx, stop in enumerate(stops):
             new_stop = JobStop(job_id=new_job.id, sequence=idx + 1, location=stop)
             db.session.add(new_stop)
-        
+
         db.session.commit()
         return redirect(url_for('dashboard'))
 
     return render_template("post_job.html")
+
 
 
 @app.route('/edit_job/<int:job_id>', methods=['GET', 'POST'])
