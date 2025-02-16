@@ -72,33 +72,6 @@ def create_db():
         except Exception as e:
             return f"Database creation failed: {str(e)}"
 
-@app.route('/init_migrations')
-def init_migrations():
-    with app.app_context():
-        try:
-            from flask_migrate import init
-            import os
-
-            if not os.path.exists("migrations"):
-                init()
-                return "Migrations initialized successfully!"
-            else:
-                return "Migrations folder already exists."
-        except Exception as e:
-            return f"Migration initialization failed: {str(e)}"
-
-
-@app.route('/makemigrations')
-def make_migrations():
-    with app.app_context():
-        try:
-            from flask_migrate import migrate
-            migrate()
-            return "Migrations created successfully!"
-        except Exception as e:
-            return f"Migration creation failed: {str(e)}"
-
-
 @app.route('/updatedb')
 def update_db():
     with app.app_context():
@@ -152,7 +125,6 @@ def dashboard():
         available_jobs = Job.query.filter_by(assigned_driver_id=None).all()
         accepted_jobs = Job.query.filter_by(assigned_driver_id=current_user.id).all()
         return render_template("driver_dashboard.html", user=current_user, available_jobs=available_jobs, accepted_jobs=accepted_jobs)
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
